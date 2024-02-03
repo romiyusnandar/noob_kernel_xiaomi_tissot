@@ -1,7 +1,13 @@
 #!/bin/bash
 #
-# Copyright (C) 2020 azrim.
+# Copyright (C) 2023 sirNewbies.
 # All rights reserved.
+
+# setup color
+red='\033[0;31m'
+green='\e[0;32m'
+white='\033[0m'
+yellow='\033[0;33m'
 
 # Init
 KERNEL_DIR="${PWD}"
@@ -12,27 +18,21 @@ COMPILER_STRING="Proton Clang 15"
 # Repo URL
 #CLANG_REPO="https://gitlab.com/LeCmnGend/proton-clang"
 ANYKERNEL_REPO="https://github.com/sirnewbies/Anykernel3.git" 
-ANYKERNEL_BRANCH="Anykernel3"
+ANYKERNEL_BRANCH="tissot-14"
 
 # Compiler
 CLANG_DIR="${HOME}"/workspaces/clang
-#if ! [ -d "${CLANG_DIR}" ]; then
-#    git clone "$CLANG_REPO" -b clang-15 --depth=1 "$CLANG_DIR"
-#fi
-
-# git clone https://github.com/baalajimaestro/aarch64-maestro-linux-android.git -b 07032020-9.2.1 --depth=1 "${KERNEL_DIR}/gcc"
-# git clone https://github.com/baalajimaestro/arm-maestro-linux-gnueabi.git -b 07032020-9.2.1 --depth=1 "${KERNEL_DIR}/gcc32"
 
 # Defconfig
 DEFCONFIG="tissot_defconfig"
 REGENERATE_DEFCONFIG="false" # unset if don't want to regenerate defconfig
 
 # Costumize
-KERNEL="Another_Kernel"
-RELEASE_VERSION="Hard"
-DEVICE="Tissot"
-KERNELTYPE="NonOC-NonTreble"
-KERNEL_SUPPORT="10 - 13"
+KERNEL="noob-kernel"
+RELEASE_VERSION=""
+DEVICE="tissot"
+KERNELTYPE="Treble"
+KERNEL_SUPPORT="14"
 KERNELNAME="${KERNEL}-${DEVICE}-${KERNELTYPE}-$(TZ=Asia/Jakarta date +%y%m%d-%H%M)"
 TEMPZIPNAME="${KERNELNAME}.zip"
 ZIPNAME="${KERNELNAME}.zip"
@@ -68,12 +68,11 @@ regenerate() {
 
 # Building
 makekernel() {
-    echo ".........................."
-    echo ".     Building Kernel    ."
-    echo ".........................."
+    echo -e ".........................."
+    echo -e ".     Building Kernel    ."
+    echo -e ".........................."
+
     export PATH="/workspaces/clang/bin:$PATH"
-#    export CROSS_COMPILE=${KERNEL_DIR}/gcc/bin/aarch64-maestro-linux-gnu-
-#    export CROSS_COMPILE_ARM32=${KERNEL_DIR}/gcc32/bin/arm-maestro-linux-gnueabi-
     rm -rf "${KERNEL_DIR}"/out/arch/arm64/boot # clean previous compilation
     mkdir -p out
     make O=out ARCH=arm64 ${DEFCONFIG}
@@ -86,36 +85,27 @@ makekernel() {
     if ! [ -f "${KERN_IMG}" ]; then
         END=$(TZ=Asia/Jakarta date +"%s")
         DIFF=$(( END - START ))
-        echo -e "Kernel compilation failed, See buildlog to fix errors"
-        tg_cast "Build for ${DEVICE} <b>failed</b> in $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! Check Instance for errors @romiyusnandar"
+        echo -e "$red Kernel compilation failed, See buildlog to fix errors"
+        tg_cast "Build for ${DEVICE} <b>failed</b> in $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! Check Instance for errors @sirnewbies"
         exit 1
     fi
 }
 
 # Packing kranul
 packingkernel() {
-    echo "........................"
-    echo ".    Packing Kernel    ."
-    echo "........................"
+    echo -e "$yellow ........................"
+    echo -e " .    Packing Kernel    ."
+    echo -e " ........................ \n$white"
     # Copy compiled kernel
     if [ -d "${ANYKERNEL}" ]; then
         rm -rf "${ANYKERNEL}"
     fi
     git clone "$ANYKERNEL_REPO" -b "$ANYKERNEL_BRANCH" "${ANYKERNEL}"
-     #   mkdir "${ANYKERNEL}"/kernel/
         cp "${KERN_IMG}" "${ANYKERNEL}"/Image.gz-dtb
-   #     mkdir "${ANYKERNEL}"/dtb-nontreble/
-  #      cp "${KERN_DTB_NONTB}" "${ANYKERNEL}"/dtb-nontreble/msm8953-qrd-sku3-tissot-nontreble.dtb
-  #  mkdir "${ANYKERNEL}"/dtb-treble/
-   #     cp "${KERN_DTB_NONTB}" "${ANYKERNEL}"/dtb-treble/msm8953-qrd-sku3-tissot-nontreble.dtb
 
     # Zip the kernel, or fail
     cd "${ANYKERNEL}" || exit
     zip -r9 "${TEMPZIPNAME}" ./*
-
-    # Sign the zip before sending it to Telegram
-   # curl -sLo zipsigner-3.0.jar https://raw.githubusercontent.com/baalajimaestro/AnyKernel2/master/zipsigner-3.0.jar
-   # java -jar zipsigner-3.0.jar "${TEMPZIPNAME}" "${ZIPNAME}"
 
     # Ship it to the CI channel
     "${TELEGRAM}" -f "$ZIPNAME" -t "${TELEGRAM_TOKEN}" -c "${CHATIDQ}" 
@@ -137,11 +127,9 @@ DIFF=$(( END - START ))
 tg_cast "Build for ${DEVICE} with ${COMPILER_STRING} <b>succeed</b> took $((DIFF / 60)) minute(s) and $((DIFF % 60)) second(s)! by @romiyusnandar"
 
 tg_cast  "<b>Changelog :</b>" \
-    "- Bump new version" \
-    "- Add kernelsu support" \
-   # "- Upstremed Kernel to 4.9.337" \
-   # "- More Changelogs : https://github.com/zhantech/android_kernel_msm8953/commits/Pringgodani"
+    "- A14 only" \
+    "- Treble build" \
 
-    echo "........................"
-    echo ".    Build Finished    ."
-    echo "........................"
+echo -e "$green ........................"
+echo -e ".    Build Finished    ."
+echo -e "........................"
